@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Other Apps
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'drf_spectacular',
+    'django_filters',
+    'django_iranian_payment.contrib.django',
     # My apps
     'accounts',
     'catalog',
@@ -110,6 +116,35 @@ AUTH_USER_MODEL = "accounts.User"
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
+# RestFramework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_RATES': {
+        'otp_request': '3/hour', # Max otp requests per hour
+        'otp_verify': '5/minute', # Max 5 verification attempts per minute
+    }
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Store API',
+    'VERSION': '1.0.0',
+}
+
+# Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_TASK_ALWAYS_EAGER = True
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Tehran'
@@ -134,3 +169,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #LOGIN_URL = 'accounts:login'
 
 # Jalali date settings
+
+
+# Development:print emails to console
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@mystore.com'
+
+# Production (example with SMTP):
+# EMAIL_BACKEND
+# EMAIL_HOST
+# EMAIL_PORT
+# EMAIL_USE_LTS
+# EMAIL_HOST_USER
+# EMAIL_HOST_PASSWORD
+
+IRANIAN_PAYMENT = {
+    'currency': 'toman', #or 'rial'
+    'sandbox': True, #True in Dev env
+    'gateways': {
+        "zarinpal":{
+            "merchant_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+            "sandbox": True
+        }
+    }
+    # 'return_url': '/api/payments/result/' #Optional
+}
