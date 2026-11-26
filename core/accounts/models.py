@@ -3,6 +3,10 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import RegexValidator
+from django.utils import timezone
+from datetime import timedelta
+import secrets
+
 # Create your models here.
 
 
@@ -95,3 +99,30 @@ class Address(models.Model):
         if self.is_default:
             Address.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(is_default=False)
         super().save(*args, **kwargs)
+
+
+class OTPCode(models.Model):
+    """
+    Email OTP for verification.
+    Uses creyptographically secure generation(secrets module).
+    """
+    email = models.EmailField('Email')
+    code = models.CharField('OTP code', max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = f"{secrets.randbelow(1000000):06d}"
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(minutes=10)
+        super().save(*args, **kwargs)
+    
+    def is_valid(self):
+        return not self.is_used and timezone.now() < self.expires_at
+    
+    class Meta:
+        verbose_name = 'OTP Code'
+        verbose_name_plural = 'OTP Codes'
+        ordering = ['-created_at']
